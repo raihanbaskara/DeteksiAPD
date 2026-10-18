@@ -59,18 +59,18 @@ Sistem pengawasan konvensional yang mengandalkan patroli manual oleh petugas K3 
 
 ```mermaid
 flowchart TD
-    A[📹 Video Feed / CCTV / Webcam] --> B[🧠 SafeK3 Computer Vision Engine\n(YOLOv8s Inferences)]
-    B --> C{Pengecekan APD:\nHelm & Vest Terpasang?}
+    A["Video Feed / CCTV / Webcam"] --> B["SafeK3 Computer Vision Engine<br/>(YOLOv8s Inference)"]
+    B --> C{"Pengecekan APD:<br/>Helm & Vest Terpasang?"}
     
-    C -- "Lengkap (Aman)" --> D[✅ Status Layar: AMAN\nBuzzer OFF]
+    C -- "Lengkap (Aman)" --> D["Status Layar: AMAN<br/>(Buzzer OFF)"]
     
-    C -- "Tidak Lengkap (Pelanggaran)" --> E[⚠️ Status Layar: PERINGATAN]
-    E --> F[💾 Simpan Bukti Lokal\n(CSV Log & JPEG Screenshot)]
-    E --> G[📡 Sinyal HTTP ke ESP32\n(Buzzer Alarm Bunyi)]
-    E --> H[☁️ Upload ke Firebase\n(Storage Foto & RTDB Log)]
+    C -- "Tidak Lengkap (Pelanggaran)" --> E["Status Layar: PERINGATAN<br/>(Pelanggaran Terdeteksi)"]
+    E --> F["Simpan Bukti Lokal<br/>(CSV Log & JPEG Screenshot)"]
+    E --> G["Sinyal HTTP ke ESP32<br/>(Buzzer Alarm Aktif)"]
+    E --> H["Upload ke Firebase Cloud<br/>(Storage Foto & RTDB Log)"]
     
-    H --> I[💻 Web K3 Monitoring Dashboard\n(Statistik & Audit Log)]
-    G --> J[🔊 Alarm Buzzer di Area Kerja]
+    H --> I["Web K3 Monitoring Dashboard<br/>(Statistik & Riwayat Audit)"]
+    G --> J["Alarm Buzzer di Area Kerja"]
 ```
 
 ---
