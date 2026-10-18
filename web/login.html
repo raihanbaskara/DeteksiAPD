@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Smart K3 Camera</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;display:flex}
+
+/* ── Panel Kiri ── */
+.left{
+  flex:1.1;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(240,180,41,.16),transparent 40%),
+    radial-gradient(circle at 80% 75%,rgba(88,166,255,.12),transparent 45%),
+    linear-gradient(155deg,#161b22 0%,#0d1117 65%);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:48px 56px;position:relative;overflow:hidden;
+  border-right:1px solid #30363d
+}
+.left::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:radial-gradient(circle at 30% 30%,rgba(0,0,0,.6),transparent 70%)
+}
+.left-top,.left-bottom{position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:14px}
+.hicon{width:48px;height:48px;background:#f0b429;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 6px 20px rgba(240,180,41,.25)}
+.btitle{font-size:19px;font-weight:700}
+.bsub{font-size:12px;color:#8b949e;margin-top:2px}
+.hero h1{font-size:30px;font-weight:700;line-height:1.35;margin:36px 0 14px;max-width:420px}
+.hero h1 span{color:#f0b429}
+.hero p{font-size:13px;color:#8b949e;max-width:380px;line-height:1.75}
+.feat-list{margin-top:30px;display:flex;flex-direction:column;gap:14px}
+.feat{display:flex;align-items:flex-start;gap:12px}
+.feat-ic{width:28px;height:28px;border-radius:7px;background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.25);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:#f0b429}
+.feat b{display:block;color:#e6edf3;font-size:13px;margin-bottom:1px}
+.feat small{color:#8b949e;font-size:12px}
+.left-bottom{font-size:11px;color:#484f58}
+
+/* ── Panel Kanan ── */
+.right{flex:1;display:flex;align-items:center;justify-content:center;padding:32px}
+.form-wrap{width:100%;max-width:380px}
+.mbrand{display:none;align-items:center;gap:10px;margin-bottom:26px}
+.mbrand .hicon{width:38px;height:38px;font-size:19px}
+
+.fh h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.fh p{font-size:13px;color:#8b949e;margin-bottom:28px}
+
+.msg{font-size:12.5px;padding:11px 13px;border-radius:8px;margin-bottom:16px;display:none;line-height:1.5}
+.msg.err {display:block;background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3)}
+.msg.info{display:block;background:rgba(88,166,255,.12);color:#58a6ff;border:1px solid rgba(88,166,255,.3)}
+.msg.ok  {display:block;background:rgba(63,185,80,.12);color:#3fb950;border:1px solid rgba(63,185,80,.3)}
+
+.fg{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.fg label{font-size:12px;font-weight:600;color:#c9d1d9}
+.input-box{position:relative;display:flex;align-items:center}
+.input-box .ic{position:absolute;left:13px;font-size:14px;color:#8b949e;pointer-events:none}
+.fg input{
+  width:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;
+  color:#e6edf3;font-size:14px;padding:12px 12px 12px 38px;outline:none;
+  transition:border-color .15s,box-shadow .15s
+}
+.fg input::placeholder{color:#586069}
+.fg input:focus{border-color:#f0b429;box-shadow:0 0 0 3px rgba(240,180,41,.12)}
+.toggle-eye{position:absolute;right:12px;font-size:14px;color:#8b949e;cursor:pointer;background:none;border:none}
+.toggle-eye:hover{color:#f0b429}
+
+.row-between{display:flex;align-items:center;justify-content:space-between;margin:-2px 0 18px;font-size:12.5px}
+.chk{display:flex;align-items:center;gap:7px;color:#8b949e;cursor:pointer}
+.chk input{width:14px;height:14px;accent-color:#f0b429;cursor:pointer}
+
+.btn-main{
+  width:100%;padding:13px;border-radius:8px;border:none;font-size:14px;font-weight:700;
+  cursor:pointer;background:#f0b429;color:#0d1117;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .15s
+}
+.btn-main:hover{opacity:.9}
+.btn-main:disabled{opacity:.55;cursor:default}
+.spinner{width:14px;height:14px;border:2px solid rgba(13,17,23,.3);border-top-color:#0d1117;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.spinner.show{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.divider{display:flex;align-items:center;gap:10px;margin:22px 0;font-size:11px;color:#484f58;text-transform:uppercase;letter-spacing:.08em}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#21262d}
+
+.foot-link{text-align:center;font-size:13px;color:#8b949e}
+.foot-link a{color:#f0b429;text-decoration:none;font-weight:600}
+.foot-link a:hover{text-decoration:underline}
+
+.hint-box{font-size:11px;color:#8b949e;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 12px;margin-top:20px;line-height:1.6}
+.hint-box b{color:#c9d1d9}
+
+@media(max-width:920px){
+  .left{display:none}
+  .right{padding:24px}
+  .mbrand{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div class="left">
+  <div class="left-top">
+    <div class="brand">
+      <div class="hicon">&#x1F9BA;</div>
+      <div><div class="btitle">Smart K3 Camera</div><div class="bsub">APD Monitoring Dashboard</div></div>
+    </div>
+    <div class="hero">
+      <h1>Pantau kepatuhan <span>APD</span> di lokasi kerja secara real-time.</h1>
+      <p>Sistem deteksi otomatis pelanggaran penggunaan Alat Pelindung Diri (APD) menggunakan kamera AI, terintegrasi langsung dengan dashboard pemantauan.</p>
+    </div>
+    <div class="feat-list">
+      <div class="feat"><div class="feat-ic">&#x1F4CA;</div><div><b>Statistik & Laporan Real-time</b><small>Lihat tren pelanggaran harian dan distribusi jenis APD.</small></div></div>
+      <div class="feat"><div class="feat-ic">&#x1F512;</div><div><b>Akses Berjenjang</b><small>Admin dan Worker memiliki hak akses yang berbeda.</small></div></div>
+      <div class="feat"><div class="feat-ic">&#x1F4F7;</div><div><b>Bukti Foto Otomatis</b><small>Setiap pelanggaran terdokumentasi lengkap dengan foto.</small></div></div>
+    </div>
+  </div>
+  <div class="left-bottom">&copy; <span id="yr"></span> Smart K3 Camera &mdash; Internal use only.</div>
+</div>
+
+<div class="right">
+  <div class="form-wrap">
+    <div class="mbrand">
+      <div class="hicon">&#x1F9BA;</div>
+      <div><div class="btitle">Smart K3 Camera</div><div class="bsub">APD Monitoring Dashboard</div></div>
+    </div>
+    <div class="fh">
+      <h2>Selamat Datang</h2>
+      <p>Masuk untuk mengakses dashboard pemantauan APD.</p>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <form onsubmit="doLogin(event)">
+      <div class="fg">
+        <label>Username</label>
+        <div class="input-box">
+          <span class="ic">&#x1F464;</span>
+          <input type="text" id="username" placeholder="Masukkan username" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div class="input-box">
+          <span class="ic">&#x1F512;</span>
+          <input type="password" id="password" placeholder="Masukkan password" autocomplete="current-password" required style="padding-right:40px">
+          <button type="button" class="toggle-eye" id="eyeBtn" onclick="togglePw()">&#x1F441;</button>
+        </div>
+      </div>
+      <div class="row-between">
+        <label class="chk"><input type="checkbox" id="remember"> Ingat saya</label>
+      </div>
+      <button class="btn-main" id="btnLogin" type="submit">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnLabel">Masuk</span>
+      </button>
+    </form>
+
+    <div class="divider">atau</div>
+    <div class="foot-link">Belum punya akun? <a href="register.html">Daftar di sini</a></div>
+    <div class="hint-box"><b>Info:</b> Akun baru yang mendaftar otomatis mendapat jabatan <b>Worker</b>. Untuk akses Admin, hubungi administrator sistem.</div>
+  </div>
+</div>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* ── Firebase ── */
+firebase.initializeApp({
+  apiKey           :'AIzaSyBxxeCydvCLip8c3sSR5A4mn-ff7-t-0BE',
+  authDomain       :'safecam-b2d73-72774.firebaseapp.com',
+  databaseURL      :'https://safecam-b2d73-72774-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId        :'safecam-b2d73-72774',
+  storageBucket    :'safecam-b2d73-72774.firebasestorage.app',
+  messagingSenderId:'905504628766',
+  appId            :'1:905504628766:web:4f524d989056c686fa4e0f'
+});
+var db = firebase.database();
+
+/* ── Akun admin bawaan (fallback jika Firebase belum ada data) ── */
+var BUILTIN_ACCOUNTS = [
+  { uid:'builtin-admin', username:'admin', password:'admin123', nama:'Administrator', role:'admin' }
+];
+
+var SESSION_NORMAL  = 8  * 60 * 60 * 1000;   // 8 jam
+var SESSION_REMEMBER= 7  * 24 * 60 * 60 * 1000; // 7 hari
+
+/* ── Jika sudah login & session aktif → langsung ke dashboard ── */
+(function(){
+  var raw = sessionStorage.getItem('k3_session') || localStorage.getItem('k3_session');
+  if(!raw) return;
+  try{
+    var s = JSON.parse(raw);
+    if(s && s.exp > Date.now()) window.location.href = 'dashboard_k3.html';
+    else { sessionStorage.removeItem('k3_session'); localStorage.removeItem('k3_session'); }
+  }catch(e){ sessionStorage.removeItem('k3_session'); localStorage.removeItem('k3_session'); }
+})();
+
+/* ── Flash message dari register / logout ── */
+(function(){
+  var f = sessionStorage.getItem('k3_flash');
+  if(f){ showMsg(f,'ok'); sessionStorage.removeItem('k3_flash'); }
+})();
+
+function showMsg(txt,type){ var el=document.getElementById('msg'); el.textContent=txt; el.className='msg '+type; }
+function setLoading(v){
+  document.getElementById('btnLogin').disabled=v;
+  document.getElementById('spinner').classList.toggle('show',v);
+  document.getElementById('btnLabel').textContent=v?'Memeriksa...':'Masuk';
+}
+function togglePw(){
+  var inp=document.getElementById('password');
+  inp.type=inp.type==='password'?'text':'password';
+  document.getElementById('eyeBtn').innerHTML=inp.type==='text'?'&#x1F576;&#xFE0F;':'&#x1F441;';
+}
+
+function createSession(user, remember){
+  var dur = remember ? SESSION_REMEMBER : SESSION_NORMAL;
+  var s   = { uid:user.uid, username:user.username, nama:user.nama, role:user.role, exp:Date.now()+dur };
+  (remember ? localStorage : sessionStorage).setItem('k3_session', JSON.stringify(s));
+  window.location.href = 'dashboard_k3.html';
+}
+
+function doLogin(e){
+  e.preventDefault();
+  var uname    = document.getElementById('username').value.trim();
+  var pw       = document.getElementById('password').value;
+  var remember = document.getElementById('remember').checked;
+  if(!uname||!pw){ showMsg('Username dan password wajib diisi.','err'); return; }
+
+  setLoading(true);
+  showMsg('Memeriksa akun...','info');
+
+  /* 1️⃣  Cek akun builtin dulu (tidak butuh Firebase) */
+  var builtin = BUILTIN_ACCOUNTS.find(function(a){ return a.username===uname && a.password===pw; });
+  if(builtin){
+    /* Coba sinkron ke Firebase (opsional, tidak diblok kalau gagal) */
+    db.ref('users').orderByChild('username').equalTo('admin').once('value')
+      .then(function(snap){
+        if(!snap.exists()){
+          db.ref('users').push({ nama:'Administrator', username:'admin', password:'admin123', role:'admin' });
+        }
+      }).catch(function(){});
+    setLoading(false);
+    createSession(builtin, remember);
+    return;
+  }
+
+  /* 2️⃣  Cek ke Firebase untuk akun worker / admin yang dibuat via register/kelola akun */
+  db.ref('users').orderByChild('username').equalTo(uname).once('value')
+    .then(function(snap){
+      setLoading(false);
+      if(!snap.exists()){ showMsg('Username tidak ditemukan.','err'); return; }
+      var match=null, key=null;
+      snap.forEach(function(c){ var v=c.val(); if(v.password===pw){ match=v; key=c.key; } });
+      if(!match){ showMsg('Password salah.','err'); return; }
+      createSession({ uid:key, username:match.username, nama:match.nama||match.username, role:match.role||'worker' }, remember);
+    })
+    .catch(function(err){
+      setLoading(false);
+      /* Firebase error (rules belum diset?) → coba builtin lagi sebagai safety net */
+      var b2 = BUILTIN_ACCOUNTS.find(function(a){ return a.username===uname && a.password===pw; });
+      if(b2){ createSession(b2, remember); return; }
+      showMsg('Gagal konek server. Coba lagi atau hubungi admin. ('+err.message+')','err');
+    });
+}
+</script>
+</body>
+</html>

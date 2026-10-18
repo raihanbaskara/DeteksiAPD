@@ -1,0 +1,56 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Sensitive Firebase & API Credentials (CRITICAL)
+*serviceAccountKey*.json
+!config/serviceAccountKey.json.example
+*.pem
+*.key
+.env
+.env.*
+
+# Executables & Binaries
+*.exe
+*.dll
+*.so
+
+# Archive & Large Datasets
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+Dataset_Safety_Helmet_and_Vest/
+
+# Local Detection Logs & Screenshots
+safek3_logs/
+*.csv.log
+violation_*.jpg
+violation_*.png
+
+# Legacy local workspace folders & side experiment scratch files
+/best.pt
+/safek3_webcam.py
+PBL/
+hand_gesture_recognition*.py
+gesture_templates.json
+rescue-tag-smart*.html
+latihan.py
+tempCodeRunnerFile.py
+*.bat
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

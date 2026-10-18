@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Akun - Smart K3 Camera</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;display:flex}
+
+.left{
+  flex:1.1;
+  background:
+    radial-gradient(circle at 20% 75%,rgba(88,166,255,.14),transparent 40%),
+    radial-gradient(circle at 78% 18%,rgba(240,180,41,.13),transparent 40%),
+    linear-gradient(155deg,#161b22 0%,#0d1117 65%);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:48px 56px;position:relative;overflow:hidden;
+  border-right:1px solid #30363d
+}
+.left::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:radial-gradient(circle at 70% 70%,rgba(0,0,0,.5),transparent 65%)
+}
+.left-top,.left-bottom{position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:14px}
+.hicon{width:48px;height:48px;background:#f0b429;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 6px 20px rgba(240,180,41,.25)}
+.btitle{font-size:19px;font-weight:700}
+.bsub{font-size:12px;color:#8b949e;margin-top:2px}
+.hero{margin:36px 0 0}
+.hero h1{font-size:28px;font-weight:700;line-height:1.4;margin-bottom:14px;max-width:400px}
+.hero h1 span{color:#f0b429}
+.hero p{font-size:13px;color:#8b949e;max-width:360px;line-height:1.75}
+.steps{margin-top:32px;display:flex;flex-direction:column;gap:18px}
+.step{display:flex;align-items:flex-start;gap:14px}
+.step-num{width:28px;height:28px;border-radius:50%;background:rgba(240,180,41,.15);border:1px solid rgba(240,180,41,.3);color:#f0b429;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-txt b{display:block;font-size:13px;color:#e6edf3;margin-bottom:2px}
+.step-txt small{font-size:12px;color:#8b949e;line-height:1.5}
+.left-bottom{font-size:11px;color:#484f58}
+
+.right{flex:1;display:flex;align-items:center;justify-content:center;padding:32px;overflow-y:auto}
+.form-wrap{width:100%;max-width:380px;padding:8px 0}
+.mbrand{display:none;align-items:center;gap:10px;margin-bottom:26px}
+.mbrand .hicon{width:38px;height:38px;font-size:19px}
+.fh h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.fh p{font-size:13px;color:#8b949e;margin-bottom:28px}
+
+.msg{font-size:12.5px;padding:11px 13px;border-radius:8px;margin-bottom:16px;display:none;line-height:1.5}
+.msg.err {display:block;background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3)}
+.msg.info{display:block;background:rgba(88,166,255,.12);color:#58a6ff;border:1px solid rgba(88,166,255,.3)}
+
+.fg{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.fg label{font-size:12px;font-weight:600;color:#c9d1d9}
+.input-box{position:relative;display:flex;align-items:center}
+.input-box .ic{position:absolute;left:13px;font-size:14px;color:#8b949e;pointer-events:none}
+.fg input{
+  width:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;
+  color:#e6edf3;font-size:14px;padding:12px 12px 12px 38px;outline:none;
+  transition:border-color .15s,box-shadow .15s
+}
+.fg input::placeholder{color:#586069}
+.fg input:focus {border-color:#f0b429;box-shadow:0 0 0 3px rgba(240,180,41,.12)}
+.fg input.valid  {border-color:#3fb950}
+.fg input.invalid{border-color:#f85149}
+.toggle-eye{position:absolute;right:12px;font-size:14px;color:#8b949e;cursor:pointer;background:none;border:none}
+.toggle-eye:hover{color:#f0b429}
+.hint{font-size:11px;color:#8b949e;margin-top:4px}
+.pw-bar{display:flex;gap:4px;margin-top:6px}
+.pw-seg{flex:1;height:4px;border-radius:2px;background:#21262d;transition:background .2s}
+
+.role-box{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.role-box .role-ic{font-size:20px}
+.role-lbl b{display:block;font-size:13px;color:#58a6ff;margin-bottom:1px}
+.role-lbl small{font-size:11px;color:#8b949e}
+
+.btn-main{
+  width:100%;padding:13px;border-radius:8px;border:none;font-size:14px;font-weight:700;
+  cursor:pointer;background:#f0b429;color:#0d1117;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s
+}
+.btn-main:hover{opacity:.9}
+.btn-main:disabled{opacity:.55;cursor:default}
+.spinner{width:14px;height:14px;border:2px solid rgba(13,17,23,.3);border-top-color:#0d1117;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.spinner.show{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.divider{display:flex;align-items:center;gap:10px;margin:22px 0;font-size:11px;color:#484f58;text-transform:uppercase;letter-spacing:.08em}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#21262d}
+.foot-link{text-align:center;font-size:13px;color:#8b949e}
+.foot-link a{color:#f0b429;text-decoration:none;font-weight:600}
+.foot-link a:hover{text-decoration:underline}
+
+@media(max-width:920px){
+  .left{display:none}
+  .right{padding:24px}
+  .mbrand{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div class="left">
+  <div class="left-top">
+    <div class="brand">
+      <div class="hicon">&#x1F9BA;</div>
+      <div><div class="btitle">Smart K3 Camera</div><div class="bsub">APD Monitoring Dashboard</div></div>
+    </div>
+    <div class="hero">
+      <h1>Buat akun <span>Worker</span> Anda sekarang.</h1>
+      <p>Daftar untuk mendapatkan akses ke dashboard pemantauan APD dan mulai memantau kepatuhan keselamatan kerja di lapangan.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-txt"><b>Isi Formulir Pendaftaran</b><small>Lengkapi nama, username, dan password Anda.</small></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-txt"><b>Akun Langsung Aktif</b><small>Setelah daftar, kamu langsung bisa login saat itu juga.</small></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-txt"><b>Akses sebagai Worker</b><small>Akun baru default Worker. Hubungi admin untuk upgrade ke Admin.</small></div></div>
+    </div>
+  </div>
+  <div class="left-bottom">&copy; <span id="yr"></span> Smart K3 Camera &mdash; Internal use only.</div>
+</div>
+
+<div class="right">
+  <div class="form-wrap">
+    <div class="mbrand">
+      <div class="hicon">&#x1F9BA;</div>
+      <div><div class="btitle">Smart K3 Camera</div><div class="bsub">APD Monitoring Dashboard</div></div>
+    </div>
+    <div class="fh">
+      <h2>Buat Akun Baru</h2>
+      <p>Semua field wajib diisi. Akun aktif langsung setelah pendaftaran.</p>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <form onsubmit="doRegister(event)">
+      <div class="fg">
+        <label>Nama Lengkap</label>
+        <div class="input-box">
+          <span class="ic">&#x1F464;</span>
+          <input type="text" id="r-nama" placeholder="Nama lengkap kamu" autocomplete="name" required>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Username</label>
+        <div class="input-box">
+          <span class="ic">@</span>
+          <input type="text" id="r-username" placeholder="Huruf kecil, tanpa spasi" autocomplete="username" required oninput="checkUn()">
+        </div>
+        <div class="hint" id="hint-un">Minimal 3 karakter, hanya huruf kecil, angka, underscore.</div>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div class="input-box">
+          <span class="ic">&#x1F512;</span>
+          <input type="password" id="r-pw" placeholder="Minimal 6 karakter" required oninput="checkPw()" style="padding-right:40px">
+          <button type="button" class="toggle-eye" id="eye1" onclick="togglePw('r-pw','eye1')">&#x1F441;</button>
+        </div>
+        <div class="pw-bar"><div class="pw-seg" id="ps1"></div><div class="pw-seg" id="ps2"></div><div class="pw-seg" id="ps3"></div><div class="pw-seg" id="ps4"></div></div>
+        <div class="hint" id="hint-pw">Password belum diisi.</div>
+      </div>
+      <div class="fg">
+        <label>Konfirmasi Password</label>
+        <div class="input-box">
+          <span class="ic">&#x1F512;</span>
+          <input type="password" id="r-pw2" placeholder="Ulangi password" required oninput="checkPw2()" style="padding-right:40px">
+          <button type="button" class="toggle-eye" id="eye2" onclick="togglePw('r-pw2','eye2')">&#x1F441;</button>
+        </div>
+        <div class="hint" id="hint-pw2"></div>
+      </div>
+      <div class="role-box">
+        <div class="role-ic">&#x1F477;</div>
+        <div class="role-lbl"><b>Worker</b><small>Jabatan akun baru (default otomatis)</small></div>
+      </div>
+      <button class="btn-main" id="btnReg" type="submit">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnLabel">Buat Akun</span>
+      </button>
+    </form>
+
+    <div class="divider">sudah punya akun?</div>
+    <div class="foot-link"><a href="login.html">&#x2190; Kembali ke halaman Login</a></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+firebase.initializeApp({
+  apiKey           :'AIzaSyBxxeCydvCLip8c3sSR5A4mn-ff7-t-0BE',
+  authDomain       :'safecam-b2d73-72774.firebaseapp.com',
+  databaseURL      :'https://safecam-b2d73-72774-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId        :'safecam-b2d73-72774',
+  storageBucket    :'safecam-b2d73-72774.firebasestorage.app',
+  messagingSenderId:'905504628766',
+  appId            :'1:905504628766:web:4f524d989056c686fa4e0f'
+});
+var db = firebase.database();
+
+/* Kalau sudah login, lempar ke dashboard */
+(function(){
+  var raw = sessionStorage.getItem('k3_session')||localStorage.getItem('k3_session');
+  if(!raw)return;
+  try{ var s=JSON.parse(raw); if(s&&s.exp>Date.now()) window.location.href='dashboard_k3.html'; }catch(e){}
+})();
+
+function showMsg(txt,type){ var el=document.getElementById('msg'); el.textContent=txt; el.className='msg '+type; }
+
+function checkUn(){
+  var val=document.getElementById('r-username').value.trim();
+  var inp=document.getElementById('r-username');
+  var hint=document.getElementById('hint-un');
+  var ok=/^[a-z0-9_]{3,}$/.test(val);
+  inp.className=val?(ok?'valid':'invalid'):'';
+  hint.textContent=!val?'Minimal 3 karakter, hanya huruf kecil, angka, underscore.':ok?'✓ Username valid.':'✗ Hanya huruf kecil, angka, underscore. Min 3 karakter.';
+  hint.style.color=ok?'#3fb950':'#f85149';
+}
+
+function strength(pw){ var s=0; if(pw.length>=6)s++; if(pw.length>=10)s++; if(/[A-Z0-9]/.test(pw))s++; if(/[^a-zA-Z0-9]/.test(pw))s++; return s; }
+
+function checkPw(){
+  var pw=document.getElementById('r-pw').value;
+  var sc=pw?strength(pw):0;
+  var clr=['#f85149','#f0b429','#f0b429','#3fb950'];
+  var lbl=['','Lemah','Sedang','Kuat','Sangat Kuat'];
+  for(var i=1;i<=4;i++) document.getElementById('ps'+i).style.background=i<=sc?(clr[sc-1]||'#3fb950'):'#21262d';
+  var hint=document.getElementById('hint-pw');
+  hint.textContent=pw?(lbl[sc]?'Kekuatan: '+lbl[sc]:''):'Password belum diisi.';
+  hint.style.color=sc>=3?'#3fb950':sc>=2?'#f0b429':'#f85149';
+  checkPw2();
+}
+
+function checkPw2(){
+  var pw=document.getElementById('r-pw').value;
+  var pw2=document.getElementById('r-pw2').value;
+  var inp=document.getElementById('r-pw2');
+  var hint=document.getElementById('hint-pw2');
+  if(!pw2){inp.className='';hint.textContent='';return;}
+  var ok=pw===pw2;
+  inp.className=ok?'valid':'invalid';
+  hint.textContent=ok?'✓ Password cocok.':'✗ Password tidak cocok.';
+  hint.style.color=ok?'#3fb950':'#f85149';
+}
+
+function togglePw(id,btnId){
+  var inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  document.getElementById(btnId).innerHTML=inp.type==='text'?'&#x1F576;&#xFE0F;':'&#x1F441;';
+}
+
+function setLoading(v){
+  document.getElementById('btnReg').disabled=v;
+  document.getElementById('spinner').classList.toggle('show',v);
+  document.getElementById('btnLabel').textContent=v?'Mendaftarkan...':'Buat Akun';
+}
+
+function doRegister(e){
+  e.preventDefault();
+  var nama    =document.getElementById('r-nama').value.trim();
+  var username=document.getElementById('r-username').value.trim();
+  var pw      =document.getElementById('r-pw').value;
+  var pw2     =document.getElementById('r-pw2').value;
+
+  if(!nama||!username||!pw||!pw2){ showMsg('Semua field wajib diisi.','err'); return; }
+  if(!/^[a-z0-9_]{3,}$/.test(username)){ showMsg('Username tidak valid.','err'); return; }
+  if(username==='admin'){ showMsg('Username "admin" sudah digunakan sistem.','err'); return; }
+  if(pw.length<6){ showMsg('Password minimal 6 karakter.','err'); return; }
+  if(pw!==pw2){ showMsg('Konfirmasi password tidak cocok.','err'); return; }
+
+  setLoading(true);
+  showMsg('Memeriksa ketersediaan username...','info');
+
+  db.ref('users').orderByChild('username').equalTo(username).once('value')
+    .then(function(snap){
+      if(snap.exists()){ setLoading(false); showMsg('Username "'+username+'" sudah digunakan. Pilih username lain.','err'); return Promise.reject('dup'); }
+      return db.ref('users').push({ nama:nama, username:username, password:pw, role:'worker' });
+    })
+    .then(function(ref){
+      if(!ref) return;
+      setLoading(false);
+      sessionStorage.setItem('k3_flash','✓ Akun berhasil dibuat! Silakan login dengan username: '+username);
+      window.location.href='login.html';
+    })
+    .catch(function(err){
+      if(err==='dup') return;
+      setLoading(false);
+      showMsg('Gagal mendaftar: '+(err.message||err),'err');
+    });
+}
+</script>
+</body>
+</html>

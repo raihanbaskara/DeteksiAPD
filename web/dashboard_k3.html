@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart K3 Camera - Dashboard</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+.header { background: #161b22; border-bottom: 1px solid #30363d; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.hicon { width: 38px; height: 38px; background: #f0b429; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.htitle { font-size: 16px; font-weight: 700; }
+.hsub   { font-size: 11px; color: #8b949e; margin-top: 2px; }
+.hright { display: flex; align-items: center; gap: 10px; }
+.userchip { font-size: 12px; color: #8b949e; }
+.userchip b { color: #e6edf3; }
+.badge-role { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-left: 4px; }
+.badge-role.admin  { background: rgba(240,180,41,.15); color: #f0b429; border: 1px solid rgba(240,180,41,.3); }
+.badge-role.worker { background: rgba(88,166,255,.15); color: #58a6ff; border: 1px solid rgba(88,166,255,.3); }
+.btn-link { padding: 7px 14px; border-radius: 6px; border: 1px solid #30363d; background: transparent; color: #8b949e; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn-link:hover { border-color: #f0b429; color: #f0b429; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #f0b429; animation: pulse 2s infinite; }
+.dot.green { background: #3fb950; }
+.dot.red   { background: #f85149; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+#clock { font-size: 13px; color: #8b949e; font-family: monospace; }
+main { max-width: 1200px; margin: 0 auto; padding: 24px 28px; }
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 18px 20px; }
+.clabel { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.cval { font-size: 30px; font-weight: 700; font-family: monospace; line-height: 1; }
+.cval.red { color: #f85149; } .cval.yel { color: #f0b429; }
+.csub { font-size: 12px; color: #8b949e; margin-top: 6px; }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+.panel { background: #161b22; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; }
+.phead { padding: 12px 18px; border-bottom: 1px solid #30363d; font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; align-items: center; }
+.pbody { padding: 18px; }
+.cbox  { height: 200px; position: relative; }
+.frow  { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+.fg { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+.fg label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; }
+.fg input, .fg select { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 13px; padding: 7px 10px; outline: none; }
+.fg input:focus, .fg select:focus { border-color: #f0b429; }
+.fg select option { background: #161b22; }
+.btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; align-self: flex-end; }
+.btn-y { background: #f0b429; color: #000; } .btn-g { background: transparent; color: #8b949e; border: 1px solid #30363d; }
+.btn:hover { opacity: .85; }
+.twrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th { font-size: 11px; color: #8b949e; text-align: left; padding: 9px 13px; border-bottom: 1px solid #30363d; background: #0d1117; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #21262d; }
+tbody tr:hover { background: rgba(255,255,255,.03); }
+tbody td { padding: 11px 13px; font-size: 13px; vertical-align: middle; }
+.mono { font-family: monospace; font-size: 12px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px 2px 2px 0; background: rgba(248,81,73,.15); color: #f85149; border: 1px solid rgba(248,81,73,.3); }
+.thumb { width: 58px; height: 42px; object-fit: cover; border-radius: 5px; border: 1px solid #30363d; cursor: pointer; transition: transform .15s; }
+.thumb:hover { border-color: #f0b429; transform: scale(1.06); }
+.paging { display: flex; align-items: center; gap: 8px; justify-content: flex-end; padding-top: 12px; }
+.paging span { font-size: 12px; color: #8b949e; font-family: monospace; }
+.pgbtn { background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 12px; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+.pgbtn:hover:not(:disabled) { border-color: #f0b429; color: #f0b429; }
+.pgbtn:disabled { opacity: .3; cursor: default; }
+#lb { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 999; align-items: center; justify-content: center; }
+#lb.open { display: flex; }
+#lb img { max-width: 90vw; max-height: 85vh; border-radius: 8px; }
+#lbx { position: absolute; top: 18px; right: 24px; font-size: 28px; cursor: pointer; color: #8b949e; line-height: 1; }
+#lbx:hover { color: #e6edf3; }
+.empty { text-align: center; padding: 44px 20px; color: #8b949e; }
+.spin { width: 26px; height: 26px; margin: 0 auto 10px; border: 2px solid #30363d; border-top-color: #f0b429; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width:860px) { .stats{grid-template-columns:1fr 1fr} .charts{grid-template-columns:1fr} main{padding:16px} }
+</style>
+</head>
+<body>
+
+<div id="lb">
+  <span id="lbx" onclick="closeLB()">&#x2715;</span>
+  <img id="lbimg" src="" alt="foto bukti">
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="hicon">&#x1F9BA;</div>
+    <div>
+      <div class="htitle">Smart K3 Camera</div>
+      <div class="hsub">APD Monitoring Dashboard</div>
+    </div>
+  </div>
+  <div class="hright">
+    <span class="userchip">Halo, <b id="hWho">--</b><span class="badge-role" id="hRole"></span></span>
+    <a class="btn-link" href="admin.html" id="adminLink" style="display:none">Kelola Akun</a>
+    <button class="btn-link" onclick="logout()">Logout</button>
+    <div class="dot" id="dot"></div>
+    <div id="clock">--:--:--</div>
+  </div>
+</div>
+
+<main>
+  <div class="stats">
+    <div class="card">
+      <div class="clabel">Total Pelanggaran</div>
+      <div class="cval red" id="s-total">--</div>
+      <div class="csub">semua waktu</div>
+    </div>
+    <div class="card">
+      <div class="clabel">Hari Ini</div>
+      <div class="cval yel" id="s-today">--</div>
+      <div class="csub" id="s-date">--</div>
+    </div>
+    <div class="card">
+      <div class="clabel">APD Paling Sering</div>
+      <div class="cval" id="s-apd" style="font-size:18px;padding-top:4px">--</div>
+      <div class="csub">tidak dipakai</div>
+    </div>
+    <div class="card">
+      <div class="clabel">Zona Terbanyak</div>
+      <div class="cval" id="s-zona" style="font-size:16px;padding-top:4px">--</div>
+      <div class="csub">pelanggaran</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="panel">
+      <div class="phead">Pelanggaran 7 Hari Terakhir</div>
+      <div class="pbody"><div class="cbox"><canvas id="cHarian"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="phead">Distribusi Jenis APD</div>
+      <div class="pbody"><div class="cbox"><canvas id="cAPD"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="phead">
+      Log Pelanggaran
+      <button class="btn btn-g" onclick="loadData()" style="padding:4px 10px;font-size:11px">&#x21BB; Refresh</button>
+    </div>
+    <div class="pbody">
+      <div class="frow">
+        <div class="fg"><label>Dari</label><input type="date" id="f-dari"></div>
+        <div class="fg"><label>Sampai</label><input type="date" id="f-sampai"></div>
+        <div class="fg"><label>Zona</label><select id="f-zona"><option value="">Semua Zona</option></select></div>
+        <div class="fg">
+          <label>Jenis APD</label>
+          <select id="f-apd">
+            <option value="">Semua APD</option>
+            <option value="Helmet">Helmet</option>
+            <option value="Vest">Vest</option>
+            <option value="Goggles">Goggles</option>
+          </select>
+        </div>
+        <button class="btn btn-y" onclick="applyFilter()">Filter</button>
+        <button class="btn btn-g" onclick="resetFilter()">Reset</button>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Waktu</th><th>Zona</th><th>APD Tidak Dipakai</th><th>Confidence</th><th>Foto</th></tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6"><div class="empty"><div class="spin"></div><p>Memuat data dari Firebase...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="paging">
+        <button class="pgbtn" id="btn-prev" onclick="goPage(-1)" disabled>&#x2190; Prev</button>
+        <span id="pinfo">--</span>
+        <button class="pgbtn" id="btn-next" onclick="goPage(1)" disabled>Next &#x2192;</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ---- Cek session login (autentikasi & otorisasi) ----
+// Mendukung sessionStorage (normal) dan localStorage (remember me)
+var session = (function(){
+  var raw = sessionStorage.getItem('k3_session') || localStorage.getItem('k3_session');
+  if(!raw){ window.location.href = 'login.html'; return null; }
+  try{
+    var s = JSON.parse(raw);
+    if(!s || s.exp < Date.now()){
+      sessionStorage.removeItem('k3_session');
+      localStorage.removeItem('k3_session');
+      window.location.href = 'login.html';
+      return null;
+    }
+    return s;
+  }catch(e){
+    sessionStorage.removeItem('k3_session');
+    localStorage.removeItem('k3_session');
+    window.location.href = 'login.html';
+    return null;
+  }
+})();
+
+if(session){
+  document.getElementById('hWho').textContent = session.nama;
+  var rEl = document.getElementById('hRole');
+  rEl.textContent = session.role;
+  rEl.className = 'badge-role ' + session.role;
+  if(session.role === 'admin'){
+    document.getElementById('adminLink').style.display = 'inline-block';
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('k3_session');
+  localStorage.removeItem('k3_session');
+  sessionStorage.setItem('k3_flash', 'Kamu telah berhasil logout.');
+  window.location.href = 'login.html';
+}
+
+firebase.initializeApp({
+  apiKey           : "AIzaSyBxxeCydvCLip8c3sSR5A4mn-ff7-t-0BE",
+  authDomain       : "safecam-b2d73-72774.firebaseapp.com",
+  databaseURL      : "https://safecam-b2d73-72774-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId        : "safecam-b2d73-72774",
+  storageBucket    : "safecam-b2d73-72774.firebasestorage.app",
+  messagingSenderId: "905504628766",
+  appId            : "1:905504628766:web:4f524d989056c686fa4e0f"
+});
+var db = firebase.database();
+
+var allData=[], filtered=[], page=1, PER_PAGE=15, ch1=null, ch2=null;
+var today = new Date();
+var d30   = new Date(); d30.setDate(d30.getDate()-30);
+
+setInterval(function(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('id-ID',{hour12:false});
+},1000);
+
+document.getElementById('f-sampai').value = today.toISOString().slice(0,10);
+document.getElementById('f-dari').value   = d30.toISOString().slice(0,10);
+document.getElementById('s-date').textContent =
+  today.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+
+function loadData(){
+  document.getElementById('dot').className='dot';
+  document.getElementById('tbody').innerHTML=
+    '<tr><td colspan="6"><div class="empty"><div class="spin"></div><p>Memuat data...</p></div></td></tr>';
+  db.ref('logs_pelanggaran').once('value').then(function(snap){
+    allData=[];
+    snap.forEach(function(c){
+      var d=c.val();
+      allData.push({
+        waktu      : d.waktu||'',
+        zona       : d.zona||'-',
+        pelanggaran: Array.isArray(d.pelanggaran)?d.pelanggaran:[d.pelanggaran||''],
+        url_foto   : d.url_foto||'',
+        confidence : d.confidence||0
+      });
+    });
+    allData.sort(function(a,b){return b.waktu.localeCompare(a.waktu);});
+    document.getElementById('dot').className='dot green';
+    fillZona();
+    filtered=allData.slice();
+    page=1;
+    render();
+  }).catch(function(err){
+    document.getElementById('dot').className='dot red';
+    document.getElementById('tbody').innerHTML=
+      '<tr><td colspan="6"><div class="empty"><p>Gagal konek Firebase.<br>Pastikan Firebase Rules: .read = true<br><small>'+err.message+'</small></p></div></td></tr>';
+  });
+}
+
+function fillZona(){
+  var zones=[...new Set(allData.map(function(d){return d.zona;}))].filter(Boolean);
+  var sel=document.getElementById('f-zona');
+  sel.innerHTML='<option value="">Semua Zona</option>';
+  zones.forEach(function(z){
+    var o=document.createElement('option'); o.value=z; o.textContent=z; sel.appendChild(o);
+  });
+}
+
+function applyFilter(){
+  var dari  =document.getElementById('f-dari').value;
+  var sampai=document.getElementById('f-sampai').value;
+  var zona  =document.getElementById('f-zona').value;
+  var apd   =document.getElementById('f-apd').value.toLowerCase();
+  filtered=allData.filter(function(d){
+    var tgl=d.waktu.slice(0,10);
+    if(dari   && tgl<dari)   return false;
+    if(sampai && tgl>sampai) return false;
+    if(zona   && d.zona!==zona) return false;
+    if(apd    && !d.pelanggaran.some(function(p){return p.toLowerCase().includes(apd);})) return false;
+    return true;
+  });
+  page=1; render();
+}
+
+function resetFilter(){
+  document.getElementById('f-dari').value  =d30.toISOString().slice(0,10);
+  document.getElementById('f-sampai').value=today.toISOString().slice(0,10);
+  document.getElementById('f-zona').value  ='';
+  document.getElementById('f-apd').value   ='';
+  filtered=allData.slice(); page=1; render();
+}
+
+function render(){ renderStats(); renderCharts(); renderTable(); }
+
+function renderStats(){
+  document.getElementById('s-total').textContent=filtered.length;
+  var ts=today.toISOString().slice(0,10);
+  document.getElementById('s-today').textContent=filtered.filter(function(d){return d.waktu.startsWith(ts);}).length;
+  var ac={};
+  filtered.forEach(function(d){d.pelanggaran.forEach(function(p){ac[p]=(ac[p]||0)+1;});});
+  var topA=Object.entries(ac).sort(function(a,b){return b[1]-a[1];})[0];
+  document.getElementById('s-apd').textContent=topA?topA[0]+' ('+topA[1]+'x)':'--';
+  var zc={};
+  filtered.forEach(function(d){zc[d.zona]=(zc[d.zona]||0)+1;});
+  var topZ=Object.entries(zc).sort(function(a,b){return b[1]-a[1];})[0];
+  document.getElementById('s-zona').textContent=topZ?topZ[0]:'--';
+}
+
+function renderCharts(){
+  var days=[],counts=[];
+  for(var i=6;i>=0;i--){
+    var d=new Date(today); d.setDate(d.getDate()-i);
+    var s=d.toISOString().slice(0,10);
+    days.push(d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}));
+    counts.push(filtered.filter(function(x){return x.waktu.startsWith(s);}).length);
+  }
+  if(ch1)ch1.destroy();
+  ch1=new Chart(document.getElementById('cHarian'),{
+    type:'bar',
+    data:{labels:days,datasets:[{data:counts,
+      backgroundColor:counts.map(function(c){return c>0?'rgba(240,180,41,.7)':'rgba(255,255,255,.06)';}),
+      borderColor:counts.map(function(c){return c>0?'#f0b429':'rgba(255,255,255,.1)';}),
+      borderWidth:1,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{size:11},stepSize:1},beginAtZero:true}
+      }}
+  });
+  var apdC={Helmet:0,Vest:0,Goggles:0};
+  filtered.forEach(function(d){d.pelanggaran.forEach(function(p){
+    var k=Object.keys(apdC).find(function(k){return k.toLowerCase()===p.toLowerCase().trim();});
+    if(k)apdC[k]++;
+  });});
+  if(ch2)ch2.destroy();
+  ch2=new Chart(document.getElementById('cAPD'),{
+    type:'doughnut',
+    data:{labels:['Tanpa Helmet','Tanpa Vest','Tanpa Goggles'],
+      datasets:[{data:[apdC.Helmet,apdC.Vest,apdC.Goggles],
+        backgroundColor:['rgba(248,81,73,.7)','rgba(240,180,41,.7)','rgba(88,166,255,.7)'],
+        borderColor:['#f85149','#f0b429','#58a6ff'],borderWidth:1,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:11},padding:12,boxWidth:12}}}}
+  });
+}
+
+function renderTable(){
+  var tbody=document.getElementById('tbody');
+  var total=filtered.length;
+  if(!total){
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty"><p>Tidak ada data pelanggaran.</p></div></td></tr>';
+    updatePaging(0,0,0); return;
+  }
+  var start=(page-1)*PER_PAGE;
+  var slice=filtered.slice(start,start+PER_PAGE);
+  tbody.innerHTML=slice.map(function(d,i){
+    var no=start+i+1;
+    var badges=d.pelanggaran.map(function(p){return '<span class="badge">'+p+'</span>';}).join('');
+    var conf=d.confidence?Math.round(d.confidence*100)+'%':'--';
+    var foto=d.url_foto
+      ?'<img class="thumb" src="'+d.url_foto+'" loading="lazy" onerror="this.style.display=\'none\'" onclick="openLB(\''+d.url_foto+'\')">'
+      :'<span style="color:#484f58">--</span>';
+    return '<tr><td class="mono" style="color:#484f58">'+no+'</td><td class="mono">'+d.waktu+'</td><td>'+d.zona+'</td><td>'+badges+'</td><td class="mono">'+conf+'</td><td>'+foto+'</td></tr>';
+  }).join('');
+  updatePaging(start+1,Math.min(start+PER_PAGE,total),total);
+}
+
+function updatePaging(from,to,total){
+  var tp=Math.ceil(total/PER_PAGE);
+  document.getElementById('pinfo').textContent=total?from+'\u2013'+to+' dari '+total:'--';
+  document.getElementById('btn-prev').disabled=page<=1;
+  document.getElementById('btn-next').disabled=page>=tp;
+}
+
+function goPage(dir){
+  page=Math.max(1,Math.min(page+dir,Math.ceil(filtered.length/PER_PAGE)));
+  renderTable();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function openLB(url){
+  document.getElementById('lbimg').src=url;
+  document.getElementById('lb').classList.add('open');
+}
+function closeLB(){
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lbimg').src='';
+}
+document.getElementById('lb').addEventListener('click',function(e){
+  if(e.target===this)closeLB();
+});
+
+loadData();
+</script>
+</body>
+</html>
